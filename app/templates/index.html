@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>GreenOps</title>
+<style>
+body { background:#111; color:#fff; text-align:center; font-family:sans-serif; }
+button { padding:10px; margin-top:20px; }
+</style>
+</head>
+<body>
+<h1>🚀 GreenOps Production System</h1>
+<h2 id="status">Checking...</h2>
+<button onclick="check()">Check Health</button>
+
+
+<script>
+async function check(){
+ let r=await fetch('/health');
+ let d=await r.json();
+ document.getElementById("status").innerText =
+ d.status==="healthy"?"✅ Healthy":"❌ Failed";
+}
+//check();
+</script>
+</body>
+</html>
