@@ -12,33 +12,21 @@ if [ "$CURRENT" = "app_blue" ]; then
   TARGET="app_green"
   TARGET_PORT="3002"
   TARGET_CONF="nginx/green.conf"
-  CURRENT_PORT="3001"
 else
   TARGET="app_blue"
   TARGET_PORT="3001"
   TARGET_CONF="nginx/blue.conf"
-  CURRENT_PORT="3002"
 fi
 
 echo "New deployment target: $TARGET"
 
-echo "Building new Docker image..."
-docker build -t myapp ./app
+echo "Building latest application image through Docker Compose..."
+docker compose build $TARGET
 
-echo "Stopping old inactive target container if exists..."
-docker stop $TARGET || true
-docker rm $TARGET || true
+echo "Starting/recreating inactive target container: $TARGET"
+docker compose up -d --no-deps --force-recreate $TARGET
 
-
-echo "Starting new $TARGET container..."
-
-NETWORK=$(docker inspect nginx --format='{{range $k, $v := .NetworkSettings.Networks}}{{println $k}}{{end}}' | head -1)
-
-echo "Using Docker network: $NETWORK"
-
-docker run -d --name $TARGET --network $NETWORK -p $TARGET_PORT:3000 myapp
-
-echo "Waiting for application to start..."
+echo "Waiting for $TARGET to start..."
 sleep 10
 
 echo "Checking health of $TARGET..."
@@ -47,15 +35,16 @@ STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:$TARGET_PORT/he
 echo "Health status: $STATUS"
 
 if [ "$STATUS" != "200" ]; then
-  echo "Health check failed. Removing failed $TARGET container..."
+  echo "Health check failed. Stopping failed $TARGET container..."
   docker stop $TARGET || true
-  docker rm $TARGET || true
   echo "Rollback complete. Traffic remains on $CURRENT"
   exit 1
 fi
 
 echo "Health check passed. Switching Nginx traffic to $TARGET..."
+
 cp $TARGET_CONF nginx/active.conf
+docker exec nginx nginx -t
 docker exec nginx nginx -s reload
 
 echo "Traffic switched to $TARGET"
