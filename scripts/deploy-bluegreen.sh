@@ -29,8 +29,14 @@ echo "Stopping old inactive target container if exists..."
 docker stop $TARGET || true
 docker rm $TARGET || true
 
+
 echo "Starting new $TARGET container..."
-docker run -d --name $TARGET -p $TARGET_PORT:3000 myapp
+
+NETWORK=$(docker inspect nginx --format='{{range $k, $v := .NetworkSettings.Networks}}{{println $k}}{{end}}' | head -1)
+
+echo "Using Docker network: $NETWORK"
+
+docker run -d --name $TARGET --network $NETWORK -p $TARGET_PORT:3000 myapp
 
 echo "Waiting for application to start..."
 sleep 10
