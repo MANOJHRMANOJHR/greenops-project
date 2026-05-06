@@ -38,7 +38,7 @@
 
     - name: Sync project files to AWS VM
       synchronize:
-        src: ../
+        src: "{{ playbook_dir }}/../"
         dest: /opt/greenops-project/
         delete: yes
         rsync_opts:
