@@ -48,11 +48,14 @@
           - "--exclude=.pytest_cache"
           - "--exclude=*.log"
           - "--exclude=runtime-watchdog.log"
+          - "--exclude=nginx/active.conf"
 
-    - name: Ensure active nginx config exists
+    - name: Ensure active nginx config exists only first time
       shell: |
         cd /opt/greenops-project
-        cp nginx/blue.conf nginx/active.conf
+        if [ ! -f nginx/active.conf ]; then
+          cp nginx/blue.conf nginx/active.conf
+        fi
       args:
         creates: /opt/greenops-project/nginx/active.conf
 
