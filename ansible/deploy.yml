@@ -1,18 +1,26 @@
 ---
-- name: Deploy GreenOps Project on Oracle Ubuntu VM
+- name: Deploy GreenOps Project on AWS Ubuntu VM
   hosts: oracle
   become: yes
 
   tasks:
-    - name: Install required packages
+    - name: Install required system packages
       apt:
         name:
           - docker.io
-          - docker-compose-plugin
           - git
           - curl
+          - unzip
         state: present
         update_cache: yes
+
+    - name: Install Docker Compose standalone binary
+      shell: |
+        mkdir -p /usr/local/lib/docker/cli-plugins
+        curl -SL https://github.com/docker/compose/releases/download/v2.29.7/docker-compose-linux-x86_64 -o /usr/local/lib/docker/cli-plugins/docker-compose
+        chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
+      args:
+        creates: /usr/local/lib/docker/cli-plugins/docker-compose
 
     - name: Start Docker service
       service:
@@ -26,7 +34,7 @@
         state: directory
         mode: '0755'
 
-    - name: Copy project files to Oracle VM
+    - name: Copy project files to AWS VM
       copy:
         src: ../
         dest: /opt/greenops-project/
