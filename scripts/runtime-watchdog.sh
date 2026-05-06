@@ -5,8 +5,8 @@ echo "Starting GreenOps Runtime Watchdog..."
 COOLDOWN_FILE="/tmp/greenops_runtime_rollback_done"
 
 while true; do
-  CURRENT=$(docker exec nginx cat /etc/nginx/conf.d/default.conf | grep -o "app_blue\|app_green" | head -1)
-
+  CURRENT=$(cat nginx/active.conf | grep -o "app_blue\|app_green" | head -1)
+  
   if [ "$CURRENT" = "app_blue" ]; then
     CURRENT_PORT="3001"
     PREVIOUS="app_green"

@@ -1,20 +1,22 @@
 #!/bin/bash
 
-echo ""
-echo "Removing stopped containers..."
-docker container prune -f
+echo "Starting safe resource cleanup..."
 
-echo ""
-echo "Removing unused Docker images..."
+echo "Removing stopped containers except app_blue and app_green..."
+
+for container in $(docker ps -a --filter "status=exited" --format "{{.Names}}"); do
+  if [ "$container" != "app_blue" ] && [ "$container" != "app_green" ]; then
+    echo "Removing stopped container: $container"
+    docker rm "$container" || true
+  else
+    echo "Keeping blue-green rollback container: $container"
+  fi
+done
+
+echo "Removing dangling images..."
 docker image prune -f
 
-echo ""
-echo "Removing unused Docker volumes..."
-docker volume prune -f
-
-echo ""
-echo "Removing unused Docker networks..."
+echo "Removing unused networks..."
 docker network prune -f
 
-echo ""
-echo "Resource optimization completed successfully."
+echo "Safe cleanup completed."
