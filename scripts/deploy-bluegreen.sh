@@ -44,10 +44,22 @@ if [ "$STATUS" != "200" ]; then
   exit 1
 fi
 
-echo "Updating Nginx active config to $TARGET..."
+echo "Updating host active nginx config to $TARGET..."
 cp $TARGET_CONF nginx/active.conf
 
-echo "Testing Nginx config..."
+echo "Checking nginx mounted config..."
+NGINX_CONF_TARGET=$(docker exec nginx cat /etc/nginx/conf.d/default.conf | grep -o "app_blue\|app_green" | head -1 || true)
+
+echo "Nginx container currently sees: $NGINX_CONF_TARGET"
+
+if [ "$NGINX_CONF_TARGET" != "$TARGET" ]; then
+  echo "Nginx is not seeing updated active.conf. Recreating nginx container..."
+  docker rm -f nginx || true
+  docker compose up -d nginx
+  sleep 5
+fi
+
+echo "Testing Nginx config after update..."
 docker exec nginx nginx -t
 
 echo "Reloading Nginx..."
