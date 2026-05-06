@@ -1,26 +1,236 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>GreenOps</title>
-<style>
-body { background:#111; color:#fff; text-align:center; font-family:sans-serif; }
-button { padding:10px; margin-top:20px; }
-</style>
+  <title>GreenOps</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: "Segoe UI", Arial, sans-serif;
+    }
+
+    body {
+      min-height: 100vh;
+      background: linear-gradient(135deg, #07111f, #0f2a1d, #111827);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 30px;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 850px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(14px);
+      border-radius: 24px;
+      padding: 45px;
+      box-shadow: 0 25px 80px rgba(0, 0, 0, 0.35);
+      text-align: center;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 8px 16px;
+      border-radius: 30px;
+      background: rgba(34, 197, 94, 0.15);
+      color: #86efac;
+      border: 1px solid rgba(34, 197, 94, 0.35);
+      font-size: 14px;
+      margin-bottom: 20px;
+    }
+
+    h1 {
+      font-size: 42px;
+      margin-bottom: 14px;
+      font-weight: 700;
+    }
+
+    .subtitle {
+      color: #cbd5e1;
+      font-size: 17px;
+      line-height: 1.7;
+      margin-bottom: 35px;
+    }
+
+    .status-card {
+      background: rgba(15, 23, 42, 0.75);
+      border-radius: 22px;
+      padding: 35px;
+      border: 1px solid rgba(148, 163, 184, 0.2);
+    }
+
+    #status {
+      font-size: 28px;
+      margin-bottom: 12px;
+      font-weight: 600;
+    }
+
+    .status-note {
+      color: #94a3b8;
+      font-size: 14px;
+      margin-bottom: 30px;
+    }
+
+    .buttons {
+      display: flex;
+      gap: 18px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    button {
+      border: none;
+      padding: 15px 28px;
+      border-radius: 14px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .btn-health {
+      background: linear-gradient(135deg, #22c55e, #16a34a);
+      color: white;
+      box-shadow: 0 10px 25px rgba(34, 197, 94, 0.35);
+    }
+
+    .btn-health:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 14px 35px rgba(34, 197, 94, 0.5);
+    }
+
+    .btn-failure {
+      background: linear-gradient(135deg, #ef4444, #dc2626);
+      color: white;
+      box-shadow: 0 10px 25px rgba(239, 68, 68, 0.35);
+    }
+
+    .btn-failure:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 14px 35px rgba(239, 68, 68, 0.5);
+    }
+
+    .footer {
+      margin-top: 35px;
+      color: #94a3b8;
+      font-size: 13px;
+      letter-spacing: 0.5px;
+    }
+
+    @media (max-width: 600px) {
+      h1 {
+        font-size: 32px;
+      }
+
+      .container {
+        padding: 28px;
+      }
+
+      #status {
+        font-size: 22px;
+      }
+
+      button {
+        width: 100%;
+      }
+    }
+  </style>
 </head>
+
 <body>
-<h1>🚀 GreenOps Production System</h1>
-<h2 id="status">Checking...</h2>
-<button onclick="check()">Check Health</button>
 
+  <div class="container">
 
-<script>
-async function check(){
- let r=await fetch('/health');
- let d=await r.json();
- document.getElementById("status").innerText =
- d.status==="healthy"?"✅ Healthy":"❌ Failed";
-}
-//check();
-</script>
+    <div class="badge">
+      GreenOps Team • Self-Healing CI/CD
+    </div>
+
+    <h1>🚀 GreenOps Production System</h1>
+
+    <p class="subtitle">
+      A smart deployment framework with blue-green deployment,
+      runtime health monitoring, automatic rollback,
+      and real-time observability.
+    </p>
+
+    <div class="status-card">
+
+      <h2 id="status">
+        Checking application health...
+      </h2>
+
+      <p class="status-note">
+        Runtime status is validated using the <b>/health</b> endpoint.
+      </p>
+
+      <div class="buttons">
+        <button class="btn-health" onclick="check()">
+          🔍 Check Health
+        </button>
+
+        <button class="btn-failure" onclick="simulateFailure()">
+          ⚠️ Simulate Runtime Failure
+        </button>
+      </div>
+
+    </div>
+
+    <div class="footer">
+      Energy-Efficient CI/CD Deployment Framework
+    </div>
+
+  </div>
+
+  <script>
+
+    async function check() {
+      try {
+
+        let r = await fetch('/health');
+        let d = await r.json();
+
+        document.getElementById("status").innerText =
+          d.status === "healthy"
+            ? "✅ Application Healthy"
+            : "❌ Application Failed";
+
+      } catch (error) {
+
+        document.getElementById("status").innerText =
+          "❌ Unable to reach application";
+
+      }
+    }
+
+    async function simulateFailure() {
+
+      try {
+
+        await fetch('/simulate-failure', {
+          method: 'POST'
+        });
+
+        document.getElementById("status").innerText =
+          "⚠️ Runtime failure triggered. Watchdog will rollback if previous stable exists.";
+
+      } catch (error) {
+
+        document.getElementById("status").innerText =
+          "❌ Failed to trigger runtime failure";
+
+      }
+
+    }
+
+    check();
+
+  </script>
+
 </body>
 </html>

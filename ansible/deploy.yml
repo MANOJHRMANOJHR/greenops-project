@@ -2,6 +2,7 @@
 - name: Deploy GreenOps Project on AWS Ubuntu VM
   hosts: oracle
   become: yes
+  gather_facts: no
 
   tasks:
     - name: Install required system packages
@@ -11,6 +12,7 @@
           - git
           - curl
           - unzip
+          - rsync
         state: present
         update_cache: yes
 
@@ -34,11 +36,18 @@
         state: directory
         mode: '0755'
 
-    - name: Copy project files to AWS VM
-      copy:
+    - name: Sync project files to AWS VM
+      synchronize:
         src: ../
         dest: /opt/greenops-project/
-        mode: '0755'
+        delete: yes
+        rsync_opts:
+          - "--exclude=.git"
+          - "--exclude=actions-runner"
+          - "--exclude=__pycache__"
+          - "--exclude=.pytest_cache"
+          - "--exclude=*.log"
+          - "--exclude=runtime-watchdog.log"
 
     - name: Ensure active nginx config exists
       shell: |
@@ -59,7 +68,18 @@
         cd /opt/greenops-project
         bash scripts/deploy-bluegreen.sh
 
+    - name: Start runtime watchdog
+      shell: |
+        cd /opt/greenops-project
+        pkill -f runtime-watchdog.sh || true
+        nohup bash scripts/runtime-watchdog.sh > runtime-watchdog.log 2>&1 &
+
     - name: Run resource optimization cleanup
       shell: |
         cd /opt/greenops-project
         bash scripts/cleanup.sh
+
+    - name: Collect recent logs
+      shell: |
+        cd /opt/greenops-project
+        bash scripts/logs.sh > latest_logs.txt

@@ -1,9 +1,12 @@
 from flask import Flask, jsonify, render_template
 from prometheus_client import Counter, generate_latest, CONTENT_TYPE_LATEST
+import os
 
 app = Flask(__name__)
 
 REQUESTS = Counter('requests_total', 'Total Requests')
+
+FAIL_FILE = "/tmp/force_unhealthy"
 
 @app.route("/")
 def home():
@@ -12,7 +15,15 @@ def home():
 
 @app.route("/health")
 def health():
+    if os.path.exists(FAIL_FILE):
+        return jsonify({"status": "failed"}), 500
     return jsonify({"status": "healthy"}), 200
+
+@app.route("/simulate-failure", methods=["POST"])
+def simulate_failure():
+    with open(FAIL_FILE, "w") as f:
+        f.write("fail")
+    return jsonify({"message": "Runtime failure simulated"}), 200
 
 @app.route("/metrics")
 def metrics():

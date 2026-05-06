@@ -59,7 +59,10 @@ jobs:
     - name: Create Ansible Inventory
       run: |
         echo "[oracle]" > ansible/inventory.ini
-        echo "${{ env.ORACLE_HOST }} ansible_user=${{ env.ORACLE_USER }} ansible_ssh_private_key_file=~/.ssh/oracle_key.pem" >> ansible/inventory.ini
+        echo "${{ env.ORACLE_HOST }} ansible_user=${{ env.ORACLE_USER }} ansible_ssh_private_key_file=~/.ssh/oracle_key.pem ansible_ssh_common_args='-o ConnectTimeout=20 -o ServerAliveInterval=15 -o ServerAliveCountMax=3'" >> ansible/inventory.ini
+
+    - name: Install rsync
+      run: sudo apt install -y rsync
 
     - name: Deploy to Oracle VM using Ansible
       run: ansible-playbook -i ansible/inventory.ini ansible/deploy.yml

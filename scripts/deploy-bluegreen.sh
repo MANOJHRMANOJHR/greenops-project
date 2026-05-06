@@ -12,10 +12,12 @@ if [ "$CURRENT" = "app_blue" ]; then
   TARGET="app_green"
   TARGET_PORT="3002"
   TARGET_CONF="nginx/green.conf"
+  CURRENT_PORT="3001"
 else
   TARGET="app_blue"
   TARGET_PORT="3001"
   TARGET_CONF="nginx/blue.conf"
+  CURRENT_PORT="3002"
 fi
 
 echo "New deployment target: $TARGET"
@@ -23,7 +25,7 @@ echo "New deployment target: $TARGET"
 echo "Building new Docker image..."
 docker build -t myapp ./app
 
-echo "Stopping old inactive container if exists..."
+echo "Stopping old inactive target container if exists..."
 docker stop $TARGET || true
 docker rm $TARGET || true
 
@@ -33,20 +35,28 @@ docker run -d --name $TARGET -p $TARGET_PORT:3000 myapp
 echo "Waiting for application to start..."
 sleep 10
 
-echo "Checking health..."
+echo "Checking health of $TARGET..."
 STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:$TARGET_PORT/health)
 
 echo "Health status: $STATUS"
 
 if [ "$STATUS" != "200" ]; then
-  echo "Health check failed. Rolling back..."
+  echo "Health check failed. Removing failed $TARGET container..."
   docker stop $TARGET || true
   docker rm $TARGET || true
+  echo "Rollback complete. Traffic remains on $CURRENT"
   exit 1
 fi
 
-echo "Health check passed. Switching Nginx traffic..."
+echo "Health check passed. Switching Nginx traffic to $TARGET..."
 cp $TARGET_CONF nginx/active.conf
 docker exec nginx nginx -s reload
 
-echo "Deployment successful. Traffic switched to $TARGET"
+echo "Traffic switched to $TARGET"
+
+echo "Stopping previous live container $CURRENT without removing it..."
+docker stop $CURRENT || true
+
+echo "Deployment successful."
+echo "Active container: $TARGET"
+echo "Stopped previous container retained: $CURRENT"
