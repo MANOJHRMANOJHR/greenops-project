@@ -6,7 +6,6 @@ app = Flask(__name__)
 
 REQUESTS = Counter('requests_total', 'Total Requests')
 
-
 FAIL_FILE = "/tmp/force_unhealthy"
 
 @app.route("/")
