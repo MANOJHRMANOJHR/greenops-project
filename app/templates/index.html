@@ -193,6 +193,14 @@
 
   <script>
 
+window.onload = function () {
+    const failed = "{{ failed }}";
+
+    if (failed === "True") {
+        document.body.classList.add("failure");
+    }
+};
+
     async function check() {
       try {
 

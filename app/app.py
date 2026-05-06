@@ -11,7 +11,8 @@ FAIL_FILE = "/tmp/force_unhealthy"
 @app.route("/")
 def home():
     REQUESTS.inc()
-    return render_template("index.html")
+    failed = os.path.exists(FAIL_FILE)
+    return render_template("index.html", failed=failed)
 
 @app.route("/health")
 def health():
