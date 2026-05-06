@@ -71,8 +71,27 @@
     - name: Start runtime watchdog
       shell: |
         cd /opt/greenops-project
-        pkill -f runtime-watchdog.sh || true
-        nohup bash scripts/runtime-watchdog.sh > runtime-watchdog.log 2>&1 &
+
+        if [ -f runtime-watchdog.pid ]; then
+          OLD_PID=$(cat runtime-watchdog.pid)
+
+          if kill -0 "$OLD_PID" 2>/dev/null; then
+            echo "Stopping old runtime watchdog with PID $OLD_PID"
+            kill "$OLD_PID" || true
+            sleep 2
+          fi
+
+          rm -f runtime-watchdog.pid
+        fi
+
+        echo "Starting new runtime watchdog..."
+        nohup bash scripts/runtime-watchdog.sh >> runtime-watchdog.log 2>&1 &
+
+        echo $! > runtime-watchdog.pid
+
+        echo "Runtime watchdog started with PID $(cat runtime-watchdog.pid)"
+      args:
+        executable: /bin/bash
 
     - name: Run resource optimization cleanup
       shell: |
