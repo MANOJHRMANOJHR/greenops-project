@@ -21,13 +21,10 @@ fi
 echo "New deployment target: $TARGET"
 
 echo "Removing old inactive target container if it exists..."
-docker rm -f $TARGET || true
+docker compose rm -sf $TARGET || true
 
-echo "Removing old application image if it exists..."
-docker rmi myapp || true
-
-echo "Building completely fresh application image..."
-docker build --no-cache -t myapp ./app
+echo "Building fresh image for $TARGET..."
+docker compose build --no-cache $TARGET
 
 echo "Starting fresh $TARGET container..."
 docker compose up -d --no-deps $TARGET
@@ -47,9 +44,13 @@ if [ "$STATUS" != "200" ]; then
   exit 1
 fi
 
+echo "Checking if nginx can resolve $TARGET..."
+docker exec nginx getent hosts $TARGET
+
 echo "Health check passed. Switching Nginx traffic to $TARGET..."
 
 cp $TARGET_CONF nginx/active.conf
+
 docker exec nginx nginx -t
 docker exec nginx nginx -s reload
 
