@@ -46,7 +46,7 @@ if [ "$STATUS" != "200" ]; then
 fi
 
 echo "Health check passed. Switching Nginx traffic..."
-docker cp $TARGET_CONF nginx:/etc/nginx/conf.d/default.conf
+cp $TARGET_CONF nginx/active.conf
 docker exec nginx nginx -s reload
 
 echo "Deployment successful. Traffic switched to $TARGET"

@@ -40,6 +40,13 @@
         dest: /opt/greenops-project/
         mode: '0755'
 
+    - name: Ensure active nginx config exists
+      shell: |
+        cd /opt/greenops-project
+        cp nginx/blue.conf nginx/active.conf
+      args:
+        creates: /opt/greenops-project/nginx/active.conf
+
     - name: Bootstrap containers if Nginx is not running
       shell: |
         cd /opt/greenops-project
