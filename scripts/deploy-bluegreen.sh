@@ -20,11 +20,17 @@ fi
 
 echo "New deployment target: $TARGET"
 
-echo "Building latest application image through Docker Compose..."
-docker compose build $TARGET
+echo "Removing old inactive target container if it exists..."
+docker rm -f $TARGET || true
 
-echo "Starting/recreating inactive target container: $TARGET"
-docker compose up -d --no-deps --force-recreate $TARGET
+echo "Removing old application image if it exists..."
+docker rmi myapp || true
+
+echo "Building completely fresh application image..."
+docker build --no-cache -t myapp ./app
+
+echo "Starting fresh $TARGET container..."
+docker compose up -d --no-deps $TARGET
 
 echo "Waiting for $TARGET to start..."
 sleep 10
