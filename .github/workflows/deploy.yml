@@ -1,18 +1,65 @@
-name: GreenOps Production CI/CD
+name: GreenOps Oracle CI/CD
 
 on:
   push:
     branches: [main]
 
 jobs:
-  deploy:
-    runs-on: self-hosted
+  test-and-deploy:
+    runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
+    - name: Checkout Code
+      uses: actions/checkout@v3
 
-    - name: Blue-Green Deploy
-      run: bash scripts/deploy-bluegreen.sh
+    - name: Retrieve Secrets from Vault
+      uses: hashicorp/vault-action@v3
+      with:
+        url: ${{ secrets.VAULT_ADDR }}
+        token: ${{ secrets.VAULT_TOKEN }}
+        secrets: |
+          secret/data/greenops oracle_host | ORACLE_HOST ;
+          secret/data/greenops oracle_user | ORACLE_USER ;
+          secret/data/greenops oracle_ssh_key | ORACLE_SSH_KEY
 
-    - name: Resource Optimization Cleanup
-      run: bash scripts/cleanup.sh
+    - name: Prepare SSH Key
+      run: |
+        mkdir -p ~/.ssh
+        echo "${{ env.ORACLE_SSH_KEY }}" > ~/.ssh/oracle_key.pem
+        chmod 600 ~/.ssh/oracle_key.pem
+        ssh-keyscan -H ${{ env.ORACLE_HOST }} >> ~/.ssh/known_hosts
+
+    - name: Build Test Docker Image
+      run: docker build -t greenops-test ./app
+
+    - name: Run Test Container
+      run: |
+        docker stop greenops-test-container || true
+        docker rm greenops-test-container || true
+        docker run -d --name greenops-test-container -p 5000:3000 greenops-test
+        sleep 10
+
+    - name: Install Newman
+      run: npm install -g newman
+
+    - name: Run Postman API Tests
+      run: newman run postman/greenops-tests.json --env-var "base_url=http://localhost:5000"
+
+    - name: Stop Test Container
+      if: always()
+      run: |
+        docker stop greenops-test-container || true
+        docker rm greenops-test-container || true
+
+    - name: Install Ansible
+      run: |
+        sudo apt update
+        sudo apt install -y ansible
+
+    - name: Create Ansible Inventory
+      run: |
+        echo "[oracle]" > ansible/inventory.ini
+        echo "${{ env.ORACLE_HOST }} ansible_user=${{ env.ORACLE_USER }} ansible_ssh_private_key_file=~/.ssh/oracle_key.pem" >> ansible/inventory.ini
+
+    - name: Deploy to Oracle VM using Ansible
+      run: ansible-playbook -i ansible/inventory.ini ansible/deploy.yml

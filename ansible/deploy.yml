@@ -1,0 +1,50 @@
+---
+- name: Deploy GreenOps Project on Oracle Ubuntu VM
+  hosts: oracle
+  become: yes
+
+  tasks:
+    - name: Install required packages
+      apt:
+        name:
+          - docker.io
+          - docker-compose-plugin
+          - git
+          - curl
+        state: present
+        update_cache: yes
+
+    - name: Start Docker service
+      service:
+        name: docker
+        state: started
+        enabled: yes
+
+    - name: Create project directory
+      file:
+        path: /opt/greenops-project
+        state: directory
+        mode: '0755'
+
+    - name: Copy project files to Oracle VM
+      copy:
+        src: ../
+        dest: /opt/greenops-project/
+        mode: '0755'
+
+    - name: Bootstrap containers if Nginx is not running
+      shell: |
+        cd /opt/greenops-project
+        if ! docker ps --format '{{ "{{.Names}}" }}' | grep -q '^nginx$'; then
+          docker compose up -d --build
+        fi
+
+    - name: Run blue-green deployment script
+      shell: |
+        cd /opt/greenops-project
+        bash scripts/deploy-bluegreen.sh
+
+    - name: Run resource optimization cleanup
+      shell: |
+        cd /opt/greenops-project
+        bash scripts/cleanup.sh
