@@ -207,7 +207,6 @@ window.onload = function () {
         let r = await fetch('/health');
         let d = await r.json();
 
-        
         document.getElementById("status").innerText =
           d.status === "healthy"
             ? "✅ Application Healthy"
